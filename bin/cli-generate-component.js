@@ -4,7 +4,7 @@ const process = require('process');
 const program = require('commander');
 const changCase = require('change-case');
 const path = require('path');
-const generate = require('./_generator-util');
+const util = require('./_generator-util');
 
 const SUPPORT_PROP_TYPES = [
   'array',
@@ -88,4 +88,4 @@ const GENERATE_FILES = [
   },
 ];
 
-generate(GENERATE_FILES, context);
+util.generate(GENERATE_FILES, context);

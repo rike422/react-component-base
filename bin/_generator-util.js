@@ -16,9 +16,9 @@ nunjucks.configure({
 })
 
 function render(template, context) {
-  return new Promise(function (resolve) {
+  return new Promise(function(resolve) {
     nunjucks.render(path.join(TEMPLATE_PATH, template.from), context, (err, content) => {
-      if (err != null) {
+      if(err != null) {
         console.error(err);
         process.exit(1);
       }
@@ -69,27 +69,41 @@ function writeFile(path, content) {
   fs.writeFile(path, content);
 }
 
-module.exports = function (files, context) {
-  files.reduce((promise, template) => {
-    return promise.then((answerHistory) => {
-      var answerHistory = answerHistory || [];
-      if (fs.existsSync(template.to) && (answerHistory.every((history) => history !== 'overwrite_all'))) {
-        return resolveConflict(template).then((answer) => {
-          answerHistory.push(answer.choice);
-          switch (answer.choice) {
-            case 'overwrite':
-            case 'overwrite_all':
-              return render(template, context).then(() => Promise.resolve(answerHistory));
-            case 'no':
-              return Promise.resolve(answerHistory);
-            case 'quit':
-              console.log('Aborting...');
-              process.exit(0);
-              break;
-          }
-        });
+module.exports = {
+  walkSync: function(dir) {
+    const dirFiles = fs.readdirSync(dir);
+    const files = dirFiles.map((file) => {
+      if(fs.statSync(path.join(dir, file)).isDirectory()) {
+        return walkSync(path.join(dir, file));
+      } else {
+        return path.join(dir, file);
       }
-      return render(template, context).then(() => Promise.resolve(answerHistory));
     });
-  }, Promise.resolve([])).catch(console.error);
+    return Array.prototype.concat.apply([], files);
+  },
+
+  generate: function(files, context) {
+    files.reduce((promise, template) => {
+      return promise.then((answerHistory) => {
+        var answerHistory = answerHistory || [];
+        if(fs.existsSync(template.to) && (answerHistory.every((history) => history !== 'overwrite_all'))) {
+          return resolveConflict(template).then((answer) => {
+            answerHistory.push(answer.choice);
+            switch (answer.choice) {
+              case 'overwrite':
+              case 'overwrite_all':
+                return render(template, context).then(() => Promise.resolve(answerHistory));
+              case 'no':
+                return Promise.resolve(answerHistory);
+              case 'quit':
+                console.log('Aborting...');
+                process.exit(0);
+                break;
+            }
+          });
+        }
+        return render(template, context).then(() => Promise.resolve(answerHistory));
+      });
+    }, Promise.resolve([])).catch(console.error);
+  }
 }
