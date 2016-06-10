@@ -4,6 +4,7 @@ const process = require('process');
 const program = require('commander');
 const changCase = require('change-case');
 const path = require('path');
+const fs = require('fs');
 const util = require('./_generator-util');
 
 const SUPPORT_PROP_TYPES = [
@@ -89,3 +90,12 @@ const GENERATE_FILES = [
 ];
 
 util.generate(GENERATE_FILES, context);
+
+fs.appendFile(
+  path.join(__dirname, '../', 'src', 'index.js'),
+  `exports.${context.className} = require('${path.join("./", "components", context.directoryName, context.directoryName)}');`,
+  'utf8',
+  function (err) {
+    console.log(err);
+  }
+);
